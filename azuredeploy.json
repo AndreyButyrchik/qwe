@@ -19,7 +19,7 @@
             "type": "String"
         },
         "tfl_rulebook_key_vault_name": {
-            "defaultValue": "rulebook_key_vault",
+            "defaultValue": "keyvault",
             "type": "String"
         },
         "tfl_rulebook_server_farm_name": {
@@ -62,8 +62,8 @@
         "sql_server_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '-', uniqueString(resourceGroup().id))]",
         "sql_database_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '/sqldb-tfl-rulebook_', uniqueString(resourceGroup().id))]",
         "server_farm_name": "[concat(parameters('tfl_rulebook_server_farm_name'), '_', uniqueString(resourceGroup().id))]",
-        "app_service_name": "[concat(parameters('tfl_rulebook_app_service_name'), '_', uniqueString(resourceGroup().id))]",
-        "function_app_name": "[concat(parameters('tfl_rulebook_function_app_name'), '_', uniqueString(resourceGroup().id))]"
+        "app_service_name": "[concat(parameters('tfl_rulebook_app_service_name'), '-', uniqueString(resourceGroup().id))]",
+        "function_app_name": "[concat(parameters('tfl_rulebook_function_app_name'), '-', uniqueString(resourceGroup().id))]"
     },
     "resources": [
         {
@@ -108,11 +108,8 @@
                 "tier": "Basic"
             },
             "properties": {
-                "premiumMessagingPartitions": 0,
                 "minimumTlsVersion": "1.2",
-                "publicNetworkAccess": "Enabled",
-                "disableLocalAuth": false,
-                "zoneRedundant": false
+                "publicNetworkAccess": "Enabled"
             }
         },
         {
