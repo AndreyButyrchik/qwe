@@ -1,0 +1,498 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "region_name": {
+            "defaultValue": "westeurope",
+            "type": "String"
+        },
+        "tfl_rulebook_function_app_name": {
+            "defaultValue": "tfl-rulebook-function-app",
+            "type": "String"
+        },
+        "tfl_rulebook_sql_server_name": {
+            "defaultValue": "tfl-rulebook-sql_server",
+            "type": "String"
+        },
+        "tfl_rulebook_app_service_name": {
+            "defaultValue": "tfl-rulebook-app-service",
+            "type": "String"
+        },
+        "tfl_rulebook_key_vault_name": {
+            "defaultValue": "tfl-rulebook-key_vault",
+            "type": "String"
+        },
+        "tfl_rulebook_server_farm_name": {
+            "defaultValue": "tfl-rulebook-server-farm",
+            "type": "String"
+        },
+        "tfl_rulebook_application_insights_name": {
+            "defaultValue": "tfl-rulebook-application_insights",
+            "type": "String"
+        },
+        "tfl_rulebook_serivce_bus_namespace_name": {
+            "defaultValue": "tfl-rulebook-service_bus_namespace",
+            "type": "String"
+        },
+        "tfl_rulebook_sql_server_admin_login": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "tfl_rulebook_sql_server_admin_password": {
+            "defaultValue": "",
+            "type": "secureString"
+        },
+        "tfl_rulebook_client_id": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "tfl_rulebook_ms_graph_client_id": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "tfl_rulebook_ms_graph_client_secret": {
+            "defaultValue": "",
+            "type": "secureString"
+        }
+    },
+    "variables": {
+        "application_insights_name": "[concat(parameters('tfl_rulebook_application_insights_name'), '-', uniqueString(resourceGroup().id))]",
+        "key_vault_name": "[concat(parameters('tfl_rulebook_key_vault_name'), '-', uniqueString(resourceGroup().id))]",
+        "serivce_bus_namespace_name": "[concat(parameters('tfl_rulebook_serivce_bus_namespace_name'), '-', uniqueString(resourceGroup().id))]",
+        "sql_server_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '-', uniqueString(resourceGroup().id))]",
+        "sql_database_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '/sqldb-tfl-rulebook-', uniqueString(resourceGroup().id))]",
+        "server_farm_name": "[concat(parameters('tfl_rulebook_server_farm_name'), '-', uniqueString(resourceGroup().id))]",
+        "app_service_name": "[concat(parameters('tfl_rulebook_app_service_name'), '-', uniqueString(resourceGroup().id))]"
+    },
+    "resources": [
+        {
+            "type": "microsoft.insights/components",
+            "apiVersion": "2020-02-02",
+            "name": "[variables('application_insights_name')]",
+            "location": "[parameters('region_name')]",
+            "kind": "web",
+            "properties": {
+                "Application_Type": "web",
+                "Flow_Type": "Bluefield",
+                "Request_Source": "rest",
+                "RetentionInDays": 90,
+                "IngestionMode": "LogAnalytics",
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2023-02-01",
+            "name": "[variables('key_vault_name')]",
+            "location": "[parameters('region_name')]",
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "Standard"
+                },
+                "tenantId": "[tenant().tenantId]",
+                "enableSoftDelete": true,
+                "softDeleteRetentionInDays": 90,
+                "enableRbacAuthorization": true,
+                "publicNetworkAccess": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.ServiceBus/namespaces",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[variables('serivce_bus_namespace_name')]",
+            "location": "[parameters('region_name')]",
+            "sku": {
+                "name": "Basic",
+                "tier": "Basic"
+            },
+            "properties": {
+                "premiumMessagingPartitions": 0,
+                "minimumTlsVersion": "1.2",
+                "publicNetworkAccess": "Enabled",
+                "disableLocalAuth": false,
+                "zoneRedundant": false
+            }
+        },
+        {
+            "type": "Microsoft.ServiceBus/namespaces/authorizationrules",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[concat(variables('serivce_bus_namespace_name'), '/SendListen')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', variables('serivce_bus_namespace_name'))]"
+            ],
+            "properties": {
+                "rights": [
+                    "Listen",
+                    "Send"
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Sql/servers",
+            "apiVersion": "2023-02-01-preview",
+            "name": "[variables('sql_server_name')]",
+            "location": "[parameters('region_name')]",
+            "kind": "v12.0",
+            "properties": {
+                "administratorLogin": "[parameters('tfl_rulebook_sql_server_admin_login')]",
+                "administratorLoginPassword": "[parameters('tfl_rulebook_sql_server_admin_password')]",
+                "version": "12.0",
+                "minimalTlsVersion": "1.2",
+                "publicNetworkAccess": "Enabled",
+                "restrictOutboundNetworkAccess": "Disabled"
+            }
+        },
+        {
+            "type": "Microsoft.Sql/servers/databases",
+            "apiVersion": "2023-02-01-preview",
+            "name": "[variables('sql_database_name')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('sql_server_name'))]"
+            ],
+            "sku": {
+                "name": "Standard",
+                "tier": "Standard",
+                "capacity": 50
+            },
+            "kind": "v12.0,user",
+            "properties": {
+                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                "maxSizeBytes": 32212254720,
+                "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+                "zoneRedundant": false,
+                "readScale": "Disabled",
+                "requestedBackupStorageRedundancy": "Geo",
+                "isLedgerOn": false,
+                "availabilityZone": "NoPreference"
+            }
+        },
+        {
+            "type": "Microsoft.Sql/servers/firewallRules",
+            "apiVersion": "2023-02-01-preview",
+            "name": "[concat(variables('sql_server_name'), '/AllowAllWindowsAzureIps')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('sql_server_name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2022-09-01",
+            "name": "[variables('server_farm_name')]",
+            "location": "[parameters('region_name')]",
+            "sku": {
+                "name": "P0v3",
+                "tier": "Premium0V3",
+                "size": "P0v3",
+                "family": "Pv3",
+                "capacity": 1
+            },
+            "kind": "linux",
+            "properties": {
+                "perSiteScaling": false,
+                "elasticScaleEnabled": false,
+                "maximumElasticWorkerCount": 1,
+                "isSpot": false,
+                "reserved": true,
+                "isXenon": false,
+                "hyperV": false,
+                "targetWorkerCount": 0,
+                "targetWorkerSizeId": 0,
+                "zoneRedundant": false
+            }
+        },
+        {
+            "type": "Microsoft.ServiceBus/namespaces/queues",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[concat(variables('serivce_bus_namespace_name'), '/sbq-content-sync')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', variables('serivce_bus_namespace_name'))]"
+            ],
+            "properties": {
+                "maxMessageSizeInKilobytes": 256,
+                "lockDuration": "PT1M",
+                "maxSizeInMegabytes": 1024,
+                "requiresDuplicateDetection": false,
+                "requiresSession": false,
+                "defaultMessageTimeToLive": "P5D",
+                "deadLetteringOnMessageExpiration": false,
+                "enableBatchedOperations": true,
+                "duplicateDetectionHistoryTimeWindow": "PT10M",
+                "maxDeliveryCount": 10,
+                "status": "Active",
+                "enablePartitioning": false,
+                "enableExpress": false
+            }
+        },
+        {
+            "type": "Microsoft.ServiceBus/namespaces/queues",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[concat(variables('serivce_bus_namespace_name'), '/sbq-notifications')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', variables('serivce_bus_namespace_name'))]"
+            ],
+            "properties": {
+                "maxMessageSizeInKilobytes": 256,
+                "lockDuration": "PT1M",
+                "maxSizeInMegabytes": 1024,
+                "requiresDuplicateDetection": false,
+                "requiresSession": false,
+                "defaultMessageTimeToLive": "P14D",
+                "deadLetteringOnMessageExpiration": false,
+                "enableBatchedOperations": true,
+                "duplicateDetectionHistoryTimeWindow": "PT10M",
+                "maxDeliveryCount": 10,
+                "status": "Active",
+                "enablePartitioning": false,
+                "enableExpress": false
+            }
+        },
+        {
+            "type": "Microsoft.ServiceBus/namespaces/queues",
+            "apiVersion": "2022-10-01-preview",
+            "name": "[concat(variables('serivce_bus_namespace_name'), '/sbq-subscriptions')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', variables('serivce_bus_namespace_name'))]"
+            ],
+            "properties": {
+                "maxMessageSizeInKilobytes": 256,
+                "lockDuration": "PT1M",
+                "maxSizeInMegabytes": 1024,
+                "requiresDuplicateDetection": false,
+                "requiresSession": false,
+                "defaultMessageTimeToLive": "P14D",
+                "deadLetteringOnMessageExpiration": false,
+                "enableBatchedOperations": true,
+                "duplicateDetectionHistoryTimeWindow": "PT10M",
+                "maxDeliveryCount": 10,
+                "status": "Active",
+                "enablePartitioning": false,
+                "enableExpress": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2022-09-01",
+            "name": "[variables('app_service_name')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]"
+            ],
+            "kind": "app,linux",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "enabled": true,
+                "hostNameSslStates": [
+                    {
+                        "name": "[concat(variables('app_service_name'), '.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Standard"
+                    },
+                    {
+                        "name": "[concat(variables('app_service_name'), '.scm.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Repository"
+                    }
+                ],
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]",
+                "reserved": true,
+                "isXenon": false,
+                "hyperV": false,
+                "vnetRouteAllEnabled": false,
+                "vnetImagePullEnabled": false,
+                "vnetContentShareEnabled": false,
+                "siteConfig": {
+                    "numberOfWorkers": 1,
+                    "linuxFxVersion": "DOTNETCORE|7.0",
+                    "acrUseManagedIdentityCreds": false,
+                    "alwaysOn": true,
+                    "http20Enabled": false,
+                    "functionAppScaleLimit": 0,
+                    "minimumElasticInstanceCount": 0
+                },
+                "scmSiteAlsoStopped": false,
+                "clientAffinityEnabled": false,
+                "clientCertEnabled": false,
+                "clientCertMode": "Required",
+                "hostNamesDisabled": false,
+                "containerSize": 0,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": true,
+                "redundancyMode": "None",
+                "publicNetworkAccess": "Enabled",
+                "storageAccountRequired": false,
+                "keyVaultReferenceIdentity": "SystemAssigned"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(parameters('tfl_rulebook_function_app_name'), guid(resourceGroup().id))]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]"
+            ],
+            "tags": {},
+            "kind": "functionapp,linux",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "enabled": true,
+                "hostNameSslStates": [
+                    {
+                        "name": "[concat(parameters('tfl_rulebook_function_app_name'), guid(resourceGroup().id), '.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Standard"
+                    },
+                    {
+                        "name": "[concat(parameters('tfl_rulebook_function_app_name'), guid(resourceGroup().id), '.scm.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Repository"
+                    }
+                ],
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]",
+                "reserved": true,
+                "isXenon": false,
+                "hyperV": false,
+                "vnetRouteAllEnabled": false,
+                "vnetImagePullEnabled": false,
+                "vnetContentShareEnabled": false,
+                "siteConfig": {
+                    "numberOfWorkers": 1,
+                    "linuxFxVersion": "DOTNET-ISOLATED|7.0",
+                    "acrUseManagedIdentityCreds": false,
+                    "alwaysOn": true,
+                    "http20Enabled": false,
+                    "functionAppScaleLimit": 0,
+                    "minimumElasticInstanceCount": 0
+                },
+                "scmSiteAlsoStopped": false,
+                "clientAffinityEnabled": false,
+                "clientCertEnabled": false,
+                "clientCertMode": "Required",
+                "hostNamesDisabled": false,
+                "containerSize": 1536,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": true,
+                "redundancyMode": "None",
+                "publicNetworkAccess": "Enabled",
+                "storageAccountRequired": false,
+                "keyVaultReferenceIdentity": "SystemAssigned"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2023-02-01",
+            "name": "[concat(variables('key_vault_name'), '/AzureADAuth-ClientId')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('key_vault_name'))]"
+            ],
+            "properties": {
+                "attributes": {
+                    "enabled": true
+                },
+                "value": "[parameters('tfl_rulebook_client_id')]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2023-02-01",
+            "name": "[concat(variables('key_vault_name'), '/AzureADAuth-TenantId')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('key_vault_name'))]"
+            ],
+            "properties": {
+                "attributes": {
+                    "enabled": true
+                },
+                "value": "[tenant().tenantId]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2023-02-01",
+            "name": "[concat(variables('key_vault_name'), '/ConnectionStrings-DB')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('key_vault_name'))]"
+            ],
+            "properties": {
+                "attributes": {
+                    "enabled": true
+                },
+                "value": "[concat('Server=tcp:',reference(variables('sql_server_name')).fullyQualifiedDomainName,',1433;Initial Catalog=',variables('sql_database_name'),';Persist Security Info=False;User ID=',reference(variables('sql_server_name')).administratorLogin,';Password=',reference(variables('sql_server_name')).administratorLoginPassword,';MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2023-02-01",
+            "name": "[concat(variables('key_vault_name'), '/ConnectionStrings-ServiceBus')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('key_vault_name'))]"
+            ],
+            "properties": {
+                "attributes": {
+                    "enabled": true
+                },
+                "value": "[listKeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationrules', concat(variables('serivce_bus_namespace_name'), '/SendListen')), '2022-10-01-preview').primaryConnectionString]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2023-02-01",
+            "name": "[concat(variables('key_vault_name'), '/MicrosoftGraph-ClientId')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('key_vault_name'))]"
+            ],
+            "properties": {
+                "attributes": {
+                    "enabled": true
+                },
+                "value": "[parameters('tfl_rulebook_ms_graph_client_id')]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2023-02-01",
+            "name": "[concat(variables('key_vault_name'), '/MicrosoftGraph-ClientSecret')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('key_vault_name'))]"
+            ],
+            "properties": {
+                "attributes": {
+                    "enabled": true
+                },
+                "value": "[parameters('tfl_rulebook_ms_graph_client_secret')]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2023-02-01",
+            "name": "[concat(variables('key_vault_name'), '/MicrosoftGraph-TenantId')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('key_vault_name'))]"
+            ],
+            "properties": {
+                "attributes": {
+                    "enabled": true
+                },
+                "value": "[tenant().tenantId]"
+            }
+        }
+    ]
+}
