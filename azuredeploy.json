@@ -7,19 +7,19 @@
             "type": "String"
         },
         "tfl_rulebook_function_app_name": {
-            "defaultValue": "tfl-rulebook-function-app",
+            "defaultValue": "rulebook-function-app",
             "type": "String"
         },
         "tfl_rulebook_sql_server_name": {
-            "defaultValue": "tfl-rulebook-sql_server",
+            "defaultValue": "rulebook-sql-server",
             "type": "String"
         },
         "tfl_rulebook_app_service_name": {
-            "defaultValue": "tfl-rulebook-app-service",
+            "defaultValue": "rulebook-app-service",
             "type": "String"
         },
         "tfl_rulebook_key_vault_name": {
-            "defaultValue": "tfl-rulebook-key_vault",
+            "defaultValue": "rulebook_key_vault",
             "type": "String"
         },
         "tfl_rulebook_server_farm_name": {
@@ -56,13 +56,14 @@
         }
     },
     "variables": {
-        "application_insights_name": "[concat(parameters('tfl_rulebook_application_insights_name'), '-', uniqueString(resourceGroup().id))]",
-        "key_vault_name": "[concat(parameters('tfl_rulebook_key_vault_name'), '-', uniqueString(resourceGroup().id))]",
-        "serivce_bus_namespace_name": "[concat(parameters('tfl_rulebook_serivce_bus_namespace_name'), '-', uniqueString(resourceGroup().id))]",
+        "application_insights_name": "[concat(parameters('tfl_rulebook_application_insights_name'), '_', uniqueString(resourceGroup().id))]",
+        "key_vault_name": "[concat(parameters('tfl_rulebook_key_vault_name'), '_', uniqueString(resourceGroup().id))]",
+        "serivce_bus_namespace_name": "[concat(parameters('tfl_rulebook_serivce_bus_namespace_name'), '_', uniqueString(resourceGroup().id))]",
         "sql_server_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '-', uniqueString(resourceGroup().id))]",
-        "sql_database_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '/sqldb-tfl-rulebook-', uniqueString(resourceGroup().id))]",
-        "server_farm_name": "[concat(parameters('tfl_rulebook_server_farm_name'), '-', uniqueString(resourceGroup().id))]",
-        "app_service_name": "[concat(parameters('tfl_rulebook_app_service_name'), '-', uniqueString(resourceGroup().id))]"
+        "sql_database_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '/sqldb-tfl-rulebook_', uniqueString(resourceGroup().id))]",
+        "server_farm_name": "[concat(parameters('tfl_rulebook_server_farm_name'), '_', uniqueString(resourceGroup().id))]",
+        "app_service_name": "[concat(parameters('tfl_rulebook_app_service_name'), '_', uniqueString(resourceGroup().id))]",
+        "function_app_name": "[concat(parameters('tfl_rulebook_function_app_name'), '_', uniqueString(resourceGroup().id))]"
     },
     "resources": [
         {
@@ -76,7 +77,6 @@
                 "Flow_Type": "Bluefield",
                 "Request_Source": "rest",
                 "RetentionInDays": 90,
-                "IngestionMode": "LogAnalytics",
                 "publicNetworkAccessForIngestion": "Enabled",
                 "publicNetworkAccessForQuery": "Enabled"
             }
@@ -335,7 +335,7 @@
         {
             "type": "Microsoft.Web/sites",
             "apiVersion": "2022-09-01",
-            "name": "[concat(parameters('tfl_rulebook_function_app_name'), guid(resourceGroup().id))]",
+            "name": "[variables('function_app_name')]",
             "location": "[parameters('region_name')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]"
@@ -349,12 +349,12 @@
                 "enabled": true,
                 "hostNameSslStates": [
                     {
-                        "name": "[concat(parameters('tfl_rulebook_function_app_name'), guid(resourceGroup().id), '.azurewebsites.net')]",
+                        "name": "[concat(variables('function_app_name'), '.azurewebsites.net')]",
                         "sslState": "Disabled",
                         "hostType": "Standard"
                     },
                     {
-                        "name": "[concat(parameters('tfl_rulebook_function_app_name'), guid(resourceGroup().id), '.scm.azurewebsites.net')]",
+                        "name": "[concat(variables('function_app_name'), '.scm.azurewebsites.net')]",
                         "sslState": "Disabled",
                         "hostType": "Repository"
                     }
