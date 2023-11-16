@@ -440,13 +440,14 @@
             "name": "[concat(variables('key_vault_name'), '/ConnectionStrings-ServiceBus')]",
             "location": "[parameters('region_name')]",
             "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', variables('key_vault_name'))]"
+                "[resourceId('Microsoft.KeyVault/vaults', variables('key_vault_name'))]",
+                "[resourceId('Microsoft.ServiceBus/namespaces/authorizationrules', variables('serivce_bus_namespace_name'), 'SendListen')]"
             ],
             "properties": {
                 "attributes": {
                     "enabled": true
                 },
-                "value": "[listKeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationrules', concat(variables('serivce_bus_namespace_name'), '/SendListen')), '2022-10-01-preview').primaryConnectionString]"
+                "value": "[listKeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationrules', variables('serivce_bus_namespace_name'), 'SendListen'), '2022-10-01-preview').primaryConnectionString]"
             }
         },
         {
