@@ -31,7 +31,7 @@
             "type": "String"
         },
         "tfl_rulebook_serivce_bus_namespace_name": {
-            "defaultValue": "tfl-rulebook-service_bus_namespace",
+            "defaultValue": "rulebook-service-bus-namespace",
             "type": "String"
         },
         "tfl_rulebook_sql_server_admin_login": {
@@ -57,7 +57,7 @@
     },
     "variables": {
         "application_insights_name": "[concat(parameters('tfl_rulebook_application_insights_name'), '_', uniqueString(resourceGroup().id))]",
-        "key_vault_name": "[concat(parameters('tfl_rulebook_key_vault_name'), '_', uniqueString(resourceGroup().id))]",
+        "key_vault_name": "[concat(parameters('tfl_rulebook_key_vault_name'), '', uniqueString(resourceGroup().id))]",
         "serivce_bus_namespace_name": "[concat(parameters('tfl_rulebook_serivce_bus_namespace_name'), '_', uniqueString(resourceGroup().id))]",
         "sql_server_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '-', uniqueString(resourceGroup().id))]",
         "sql_database_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '/sqldb-tfl-rulebook_', uniqueString(resourceGroup().id))]",
@@ -166,14 +166,6 @@
                 "isLedgerOn": false,
                 "availabilityZone": "NoPreference"
             }
-        },
-        {
-            "type": "Microsoft.Sql/servers/firewallRules",
-            "apiVersion": "2023-02-01-preview",
-            "name": "[concat(variables('sql_server_name'), '/AllowAllWindowsAzureIps')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Sql/servers', variables('sql_server_name'))]"
-            ]
         },
         {
             "type": "Microsoft.Web/serverfarms",
