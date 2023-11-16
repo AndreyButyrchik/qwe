@@ -67,6 +67,21 @@
     },
     "resources": [
         {
+            "type": "Microsoft.Sql/servers",
+            "apiVersion": "2023-02-01-preview",
+            "name": "[variables('sql_server_name')]",
+            "location": "[parameters('region_name')]",
+            "kind": "v12.0",
+            "properties": {
+                "administratorLogin": "[parameters('tfl_rulebook_sql_server_admin_login')]",
+                "administratorLoginPassword": "[parameters('tfl_rulebook_sql_server_admin_password')]",
+                "version": "12.0",
+                "minimalTlsVersion": "1.2",
+                "publicNetworkAccess": "Enabled",
+                "restrictOutboundNetworkAccess": "Disabled"
+            }
+        },
+        {
             "type": "microsoft.insights/components",
             "apiVersion": "2020-02-02",
             "name": "[variables('application_insights_name')]",
@@ -125,21 +140,6 @@
                     "Listen",
                     "Send"
                 ]
-            }
-        },
-        {
-            "type": "Microsoft.Sql/servers",
-            "apiVersion": "2023-02-01-preview",
-            "name": "[variables('sql_server_name')]",
-            "location": "[parameters('region_name')]",
-            "kind": "v12.0",
-            "properties": {
-                "administratorLogin": "[parameters('tfl_rulebook_sql_server_admin_login')]",
-                "administratorLoginPassword": "[parameters('tfl_rulebook_sql_server_admin_password')]",
-                "version": "12.0",
-                "minimalTlsVersion": "1.2",
-                "publicNetworkAccess": "Enabled",
-                "restrictOutboundNetworkAccess": "Disabled"
             }
         },
         {
@@ -420,7 +420,7 @@
                 "attributes": {
                     "enabled": true
                 },
-                "value": "[concat('Server=tcp:',reference(variables('sql_server_name')).fullyQualifiedDomainName,',1433;Initial Catalog=',variables('sql_database_name'),';Persist Security Info=False;User ID=',reference(variables('sql_server_name')).administratorLogin,';Password=',reference(variables('sql_server_name')).administratorLoginPassword,';MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]"
+                "value": "[concat('Server=tcp:',reference(variables('sql_server_name')).fullyQualifiedDomainName,',1433;Initial Catalog=',variables('sql_database_name'),';Persist Security Info=False;User ID=',reference(variables('sql_server_name')).administratorLogin,';Password=',parameters('tfl_rulebook_sql_server_admin_password'),';MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]"
             }
         },
         {
