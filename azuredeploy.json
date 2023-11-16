@@ -60,7 +60,7 @@
         "key_vault_name": "[concat(parameters('tfl_rulebook_key_vault_name'), '', uniqueString(resourceGroup().id))]",
         "serivce_bus_namespace_name": "[concat(parameters('tfl_rulebook_serivce_bus_namespace_name'), '-', uniqueString(resourceGroup().id))]",
         "sql_server_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '-', uniqueString(resourceGroup().id))]",
-        "sql_database_name": "[concat(parameters('tfl_rulebook_sql_server_name'), uniqueString(resourceGroup().id), '/sqldb-tfl-rulebook')]",
+        "sql_database_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '-', uniqueString(resourceGroup().id), '/sqldb-tfl-rulebook')]",
         "server_farm_name": "[concat(parameters('tfl_rulebook_server_farm_name'), '_', uniqueString(resourceGroup().id))]",
         "app_service_name": "[concat(parameters('tfl_rulebook_app_service_name'), '-', uniqueString(resourceGroup().id))]",
         "function_app_name": "[concat(parameters('tfl_rulebook_function_app_name'), '-', uniqueString(resourceGroup().id))]"
