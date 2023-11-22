@@ -443,7 +443,7 @@
                         {
                             "name": "DB",
                             "type": "SQLAzure",
-                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-DB')).secretUri, ')')]"
+                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-DB')).secretUriWithVersion, ')')]"
                         }
                     ]
                 },
@@ -506,15 +506,15 @@
                     "appSettings": [
                         {
                             "name": "MicrosoftGraph__TenantId",
-                            "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'MicrosoftGraph-TenantId')).secretUri)]"
+                            "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'MicrosoftGraph-TenantId')).secretUriWithVersion, ')')]"
                         },
                         {
                             "name": "MicrosoftGraph__ClientId",
-                            "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'MicrosoftGraph-ClientId')).secretUri)]"
+                            "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'MicrosoftGraph-ClientId')).secretUriWithVersion, ')')]"
                         },
                         {
                             "name": "MicrosoftGraph__ClientSecret",
-                            "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'MicrosoftGraph-ClientSecret')).secretUri)]"
+                            "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'MicrosoftGraph-ClientSecret')).secretUriWithVersion, ')')]"
                         },
                         {
                             "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
@@ -542,7 +542,7 @@
                         },
                         {
                             "name": "Webhooks__NotificationUrl",
-                            "value": "[concat(variables('function_app_name'), '.azurewebsites.net/api/Webhook')]"
+                            "value": "[concat('https://', variables('function_app_name'), '.azurewebsites.net/api/Webhook')]"
                         },
                         {
                             "name": "Webhooks__Items__0__SitePath",
@@ -797,12 +797,12 @@
                         {
                             "name": "DB",
                             "type": "SQLAzure",
-                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-DB')).secretUri, ')')]"
+                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-DB')).secretUriWithVersion, ')')]"
                         },
                         {
                             "name": "ServiceBus",
                             "type": "ServiceBus",
-                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-ServiceBus')).secretUri, ')')]"
+                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-ServiceBus')).secretUriWithVersion, ')')]"
                         }
                     ]
                 },
