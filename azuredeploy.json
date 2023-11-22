@@ -542,7 +542,7 @@
                         },
                         {
                             "name": "Webhooks__NotificationUrl",
-                            "value": "[reference(resourceId('Microsoft.Web/sites', variables('function_app_name'))).defaultHostName]"
+                            "value": "[concat(variables('function_app_name'), '.azurewebsites.net/api/Webhook')]"
                         },
                         {
                             "name": "Webhooks__Items__0__SitePath",
