@@ -6,75 +6,131 @@
             "defaultValue": "westeurope",
             "type": "String"
         },
-        "tfl_rulebook_function_app_name": {
-            "defaultValue": "rulebook-function-app",
+        "function_app_name": {
+            "defaultValue": "func-tfl-rulebook",
             "type": "String"
         },
-        "tfl_rulebook_sql_server_name": {
-            "defaultValue": "rulebook-sql-server",
+        "sql_server_name": {
+            "defaultValue": "sql-tfl-rulebook",
             "type": "String"
         },
-        "tfl_rulebook_app_service_name": {
-            "defaultValue": "rulebook-app-service",
+        "app_service_name": {
+            "defaultValue": "app-tfl-rulebook-api",
             "type": "String"
         },
-        "tfl_rulebook_key_vault_name": {
+        "key_vault_name": {
             "defaultValue": "keyvault",
             "type": "String"
         },
-        "tfl_rulebook_server_farm_name": {
-            "defaultValue": "tfl-rulebook-server-farm",
+        "server_farm_name": {
+            "defaultValue": "asp-tfl-rulebook",
             "type": "String"
         },
-        "tfl_rulebook_application_insights_name": {
-            "defaultValue": "tfl-rulebook-application_insights",
+        "application_insights_name": {
+            "defaultValue": "appi-tfl-rulebook",
             "type": "String"
         },
-        "tfl_rulebook_serivce_bus_namespace_name": {
-            "defaultValue": "rulebook-service-bus-namespace",
+        "application_insights_mobile_name": {
+            "defaultValue": "appi-mobile-tfl-rulebook",
             "type": "String"
         },
-        "tfl_rulebook_storage_account_name": {
-            "defaultValue": "sarulebook",
+        "serivce_bus_namespace_name": {
+            "defaultValue": "sb-tfl-rulebook",
             "type": "String"
         },
-        "tfl_rulebook_sql_server_admin_login": {
+        "storage_account_name": {
+            "defaultValue": "satflrulebook",
+            "type": "String"
+        },
+        "sql_server_admin_login": {
             "defaultValue": "",
             "type": "String"
         },
-        "tfl_rulebook_sql_server_admin_password": {
+        "sql_server_admin_password": {
+            "defaultValue": "",
+            "type": "secureString"
+        },
+        "mobile_app_client_id": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "content_sync_client_id": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "content_sync_client_secret": {
             "defaultValue": "",
             "type": "secureString"
         },
-        "tfl_rulebook_client_id": {
+        "sharepoint_hostname": {
+            "defaultValue": "{{contoso.sharepoint.com}}",
+            "type": "String"
+        },
+        "webhooks_site_pages_library_site_url": {
             "defaultValue": "",
             "type": "String"
         },
-        "tfl_rulebook_ms_graph_client_id": {
+        "webhooks_taxonomy_library_site_url": {
             "defaultValue": "",
             "type": "String"
         },
-        "tfl_rulebook_ms_graph_client_secret": {
+        "webhooks_role_groups_library_site_url": {
             "defaultValue": "",
-            "type": "secureString"
+            "type": "String"
+        },
+        "webhooks_roles_library_site_url": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "webhooks_jargon_buster_library_site_url": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "webhooks_main_site_url": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "rulebook_termset_id": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "certificate_name": {
+            "defaultValue": "",
+            "type": "String"
         }
     },
     "variables": {
-        "application_insights_name": "[concat(parameters('tfl_rulebook_application_insights_name'), '_', uniqueString(resourceGroup().id))]",
-        "key_vault_name": "[concat(parameters('tfl_rulebook_key_vault_name'), '', uniqueString(resourceGroup().id))]",
-        "serivce_bus_namespace_name": "[concat(parameters('tfl_rulebook_serivce_bus_namespace_name'), '-', uniqueString(resourceGroup().id))]",
-        "sql_server_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '-', uniqueString(resourceGroup().id))]",
-        "sql_database_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '-', uniqueString(resourceGroup().id), '/sqldb-tfl-rulebook')]",
-        "server_farm_name": "[concat(parameters('tfl_rulebook_server_farm_name'), '_', uniqueString(resourceGroup().id))]",
-        "app_service_name": "[concat(parameters('tfl_rulebook_app_service_name'), '-', uniqueString(resourceGroup().id))]",
-        "function_app_name": "[concat(parameters('tfl_rulebook_function_app_name'), '-', uniqueString(resourceGroup().id))]",
-        "storage_account_name": "[concat(parameters('tfl_rulebook_storage_account_name'), uniqueString(resourceGroup().id))]"
+        "application_insights_name": "[concat(parameters('application_insights_name'), '_', uniqueString(resourceGroup().id))]",
+        "application_insights_mobile_name": "[concat(parameters('application_insights_mobile_name'), '_', uniqueString(resourceGroup().id))]",
+        "key_vault_name": "[concat(parameters('key_vault_name'), '', uniqueString(resourceGroup().id))]",
+        "serivce_bus_namespace_name": "[concat(parameters('serivce_bus_namespace_name'), '-', uniqueString(resourceGroup().id))]",
+        "sql_server_name": "[concat(parameters('sql_server_name'), '-', uniqueString(resourceGroup().id))]",
+        "sql_database_name": "[concat(parameters('sql_server_name'), '-', uniqueString(resourceGroup().id), '/sqldb-tfl-rulebook')]",
+        "server_farm_name": "[concat(parameters('server_farm_name'), '_', uniqueString(resourceGroup().id))]",
+        "app_service_name": "[concat(parameters('app_service_name'), '-', uniqueString(resourceGroup().id))]",
+        "function_app_name": "[concat(parameters('function_app_name'), '-', uniqueString(resourceGroup().id))]",
+        "storage_account_name": "[concat(parameters('storage_account_name'), uniqueString(resourceGroup().id))]"
     },
     "resources": [
         {
             "type": "microsoft.insights/components",
             "apiVersion": "2020-02-02",
             "name": "[variables('application_insights_name')]",
+            "location": "[parameters('region_name')]",
+            "kind": "web",
+            "properties": {
+                "Application_Type": "web",
+                "Flow_Type": "Bluefield",
+                "Request_Source": "rest",
+                "RetentionInDays": 90,
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+            }
+        },
+        {
+            "type": "microsoft.insights/components",
+            "apiVersion": "2020-02-02",
+            "name": "[variables('application_insights_mobile_name')]",
             "location": "[parameters('region_name')]",
             "kind": "web",
             "properties": {
@@ -139,8 +195,8 @@
             "location": "[parameters('region_name')]",
             "kind": "v12.0",
             "properties": {
-                "administratorLogin": "[parameters('tfl_rulebook_sql_server_admin_login')]",
-                "administratorLoginPassword": "[parameters('tfl_rulebook_sql_server_admin_password')]",
+                "administratorLogin": "[parameters('sql_server_admin_login')]",
+                "administratorLoginPassword": "[parameters('sql_server_admin_password')]",
                 "version": "12.0",
                 "minimalTlsVersion": "1.2",
                 "publicNetworkAccess": "Enabled",
@@ -304,7 +360,7 @@
                 "attributes": {
                     "enabled": true
                 },
-                "value": "[parameters('tfl_rulebook_client_id')]"
+                "value": "[parameters('mobile_app_client_id')]"
             }
         },
         {
@@ -334,7 +390,7 @@
                 "attributes": {
                     "enabled": true
                 },
-                "value": "[concat('Server=tcp:',reference(variables('sql_server_name')).fullyQualifiedDomainName,',1433;Initial Catalog=',variables('sql_database_name'),';Persist Security Info=False;User ID=',reference(variables('sql_server_name')).administratorLogin,';Password=',parameters('tfl_rulebook_sql_server_admin_password'),';MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]"
+                "value": "[concat('Server=tcp:',reference(variables('sql_server_name')).fullyQualifiedDomainName,',1433;Initial Catalog=',variables('sql_database_name'),';Persist Security Info=False;User ID=',reference(variables('sql_server_name')).administratorLogin,';Password=',parameters('sql_server_admin_password'),';MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]"
             }
         },
         {
@@ -365,7 +421,7 @@
                 "attributes": {
                     "enabled": true
                 },
-                "value": "[parameters('tfl_rulebook_ms_graph_client_id')]"
+                "value": "[parameters('content_sync_client_id')]"
             }
         },
         {
@@ -380,7 +436,7 @@
                 "attributes": {
                     "enabled": true
                 },
-                "value": "[parameters('tfl_rulebook_ms_graph_client_secret')]"
+                "value": "[parameters('content_sync_client_secret')]"
             }
         },
         {
@@ -538,7 +594,7 @@
                         },
                         {
                             "name": "PnP__ClientId",
-                            "value": "[parameters('tfl_rulebook_ms_graph_client_id')]"
+                            "value": "[parameters('content_sync_client_id')]"
                         },
                         {
                             "name": "Webhooks__NotificationUrl",
@@ -546,35 +602,35 @@
                         },
                         {
                             "name": "Webhooks__Items__0__SitePath",
-                            "value": ""
+                            "value": "[concat(parameters('sharepoint_hostname'), ':', parameters('webhooks_site_pages_library_site_url'))]"
                         },
                         {
                             "name": "Webhooks__Items__1__SitePath",
-                            "value": ""
+                            "value": "[concat(parameters('sharepoint_hostname'), ':', parameters('webhooks_taxonomy_library_site_url'))]"
                         },
                         {
                             "name": "Webhooks__Items__2__SitePath",
-                            "value": ""
+                            "value": "[concat(parameters('sharepoint_hostname'), ':', parameters('webhooks_role_groups_library_site_url'))]"
                         },
                         {
                             "name": "Webhooks__Items__3__SitePath",
-                            "value": ""
+                            "value": "[concat(parameters('sharepoint_hostname'), ':', parameters('webhooks_roles_library_site_url'))]"
                         },
                         {
                             "name": "Webhooks__Items__4__SitePath",
-                            "value": ""
+                            "value": "[concat(parameters('sharepoint_hostname'), ':', parameters('webhooks_jargon_buster_library_site_url'))]"
                         },
                         {
                             "name": "Webhooks__SitePath",
-                            "value": ""
+                            "value": "[concat(parameters('sharepoint_hostname'), ':', parameters('webhooks_main_site_url'))]"
                         },
                         {
                             "name": "DataSources__Taxonomy__RulebookTermSetId",
-                            "value": ""
+                            "value": "[parameters('rulebook_termset_id')]"
                         },
                         {
                             "name": "PnP__CertificateName",
-                            "value": ""
+                            "value": "[parameters('certificate_name')]"
                         },
                         {
                             "name": "DataSources__JargonBuster__Fields",
@@ -820,5 +876,15 @@
                 "keyVaultReferenceIdentity": "SystemAssigned"
             }
         }
-    ]
+    ],
+    "outputs": {
+        "web-api-url": {
+            "type": "string",
+            "value": "[concat('https://', variables('function_app_name'), '.azurewebsites.net')]"
+        },
+        "app-insights-mobile-instrumentation-key": {
+            "type": "string",
+            "value": "[reference(resourceId('microsoft.insights/components', variables('application_insights_name'))).InstrumentationKey]"
+        }
+    }
 }
