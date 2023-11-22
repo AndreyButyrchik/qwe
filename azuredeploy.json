@@ -819,6 +819,6 @@
                 "storageAccountRequired": false,
                 "keyVaultReferenceIdentity": "SystemAssigned"
             }
-        },
+        }
     ]
 }
