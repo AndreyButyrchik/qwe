@@ -34,6 +34,10 @@
             "defaultValue": "rulebook-service-bus-namespace",
             "type": "String"
         },
+        "tfl_rulebook_storage_account_name": {
+            "defaultValue": "sa-tfl-rulebook",
+            "type": "String"
+        },
         "tfl_rulebook_sql_server_admin_login": {
             "defaultValue": "",
             "type": "String"
@@ -63,7 +67,8 @@
         "sql_database_name": "[concat(parameters('tfl_rulebook_sql_server_name'), '-', uniqueString(resourceGroup().id), '/sqldb-tfl-rulebook')]",
         "server_farm_name": "[concat(parameters('tfl_rulebook_server_farm_name'), '_', uniqueString(resourceGroup().id))]",
         "app_service_name": "[concat(parameters('tfl_rulebook_app_service_name'), '-', uniqueString(resourceGroup().id))]",
-        "function_app_name": "[concat(parameters('tfl_rulebook_function_app_name'), '-', uniqueString(resourceGroup().id))]"
+        "function_app_name": "[concat(parameters('tfl_rulebook_function_app_name'), '-', uniqueString(resourceGroup().id))]",
+        "storage_account_name": "[concat(parameters('tfl_rulebook_storage_account_name'), '-', uniqueString(resourceGroup().id))]"
     },
     "resources": [
         {
@@ -266,116 +271,25 @@
             }
         },
         {
-            "type": "Microsoft.Web/sites",
-            "apiVersion": "2022-09-01",
-            "name": "[variables('app_service_name')]",
-            "location": "[parameters('region_name')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]"
-            ],
-            "kind": "app,linux",
-            "identity": {
-                "type": "SystemAssigned"
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2023-01-01",
+            "name": "[variables('storage_account_name')]",
+            "location": "westeurope",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
             },
+            "kind": "Storage",
             "properties": {
-                "enabled": true,
-                "hostNameSslStates": [
-                    {
-                        "name": "[concat(variables('app_service_name'), '.azurewebsites.net')]",
-                        "sslState": "Disabled",
-                        "hostType": "Standard"
-                    },
-                    {
-                        "name": "[concat(variables('app_service_name'), '.scm.azurewebsites.net')]",
-                        "sslState": "Disabled",
-                        "hostType": "Repository"
-                    }
-                ],
-                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]",
-                "reserved": true,
-                "isXenon": false,
-                "hyperV": false,
-                "vnetRouteAllEnabled": false,
-                "vnetImagePullEnabled": false,
-                "vnetContentShareEnabled": false,
-                "siteConfig": {
-                    "numberOfWorkers": 1,
-                    "linuxFxVersion": "DOTNETCORE|7.0",
-                    "acrUseManagedIdentityCreds": false,
-                    "alwaysOn": true,
-                    "http20Enabled": false,
-                    "functionAppScaleLimit": 0,
-                    "minimumElasticInstanceCount": 0
-                },
-                "scmSiteAlsoStopped": false,
-                "clientAffinityEnabled": false,
-                "clientCertEnabled": false,
-                "clientCertMode": "Required",
-                "hostNamesDisabled": false,
-                "containerSize": 0,
-                "dailyMemoryTimeQuota": 0,
-                "httpsOnly": true,
-                "redundancyMode": "None",
-                "publicNetworkAccess": "Enabled",
-                "storageAccountRequired": false,
-                "keyVaultReferenceIdentity": "SystemAssigned"
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites",
-            "apiVersion": "2022-09-01",
-            "name": "[variables('function_app_name')]",
-            "location": "[parameters('region_name')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]"
-            ],
-            "tags": {},
-            "kind": "functionapp,linux",
-            "identity": {
-                "type": "SystemAssigned"
-            },
-            "properties": {
-                "enabled": true,
-                "hostNameSslStates": [
-                    {
-                        "name": "[concat(variables('function_app_name'), '.azurewebsites.net')]",
-                        "sslState": "Disabled",
-                        "hostType": "Standard"
-                    },
-                    {
-                        "name": "[concat(variables('function_app_name'), '.scm.azurewebsites.net')]",
-                        "sslState": "Disabled",
-                        "hostType": "Repository"
-                    }
-                ],
-                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]",
-                "reserved": true,
-                "isXenon": false,
-                "hyperV": false,
-                "vnetRouteAllEnabled": false,
-                "vnetImagePullEnabled": false,
-                "vnetContentShareEnabled": false,
-                "siteConfig": {
-                    "numberOfWorkers": 1,
-                    "linuxFxVersion": "DOTNET-ISOLATED|7.0",
-                    "acrUseManagedIdentityCreds": false,
-                    "alwaysOn": true,
-                    "http20Enabled": false,
-                    "functionAppScaleLimit": 0,
-                    "minimumElasticInstanceCount": 0
-                },
-                "scmSiteAlsoStopped": false,
-                "clientAffinityEnabled": false,
-                "clientCertEnabled": false,
-                "clientCertMode": "Required",
-                "hostNamesDisabled": false,
-                "containerSize": 1536,
-                "dailyMemoryTimeQuota": 0,
-                "httpsOnly": true,
-                "redundancyMode": "None",
-                "publicNetworkAccess": "Enabled",
-                "storageAccountRequired": false,
-                "keyVaultReferenceIdentity": "SystemAssigned"
+                "defaultToOAuthAuthentication": true,
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": true,
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                }
             }
         },
         {
@@ -483,6 +397,428 @@
                 },
                 "value": "[tenant().tenantId]"
             }
-        }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2022-09-01",
+            "name": "[variables('app_service_name')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]"
+            ],
+            "kind": "app,linux",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "enabled": true,
+                "hostNameSslStates": [
+                    {
+                        "name": "[concat(variables('app_service_name'), '.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Standard"
+                    },
+                    {
+                        "name": "[concat(variables('app_service_name'), '.scm.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Repository"
+                    }
+                ],
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]",
+                "reserved": true,
+                "isXenon": false,
+                "hyperV": false,
+                "vnetRouteAllEnabled": false,
+                "vnetImagePullEnabled": false,
+                "vnetContentShareEnabled": false,
+                "siteConfig": {
+                    "numberOfWorkers": 1,
+                    "linuxFxVersion": "DOTNETCORE|7.0",
+                    "acrUseManagedIdentityCreds": false,
+                    "alwaysOn": true,
+                    "http20Enabled": false,
+                    "functionAppScaleLimit": 0,
+                    "minimumElasticInstanceCount": 0,
+                    "connectionStrings": [
+                        {
+                            "name": "DB",
+                            "type": "SQLAzure",
+                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-DB')).secretUri)]"
+                        }
+                    ]
+                },
+                "scmSiteAlsoStopped": false,
+                "clientAffinityEnabled": false,
+                "clientCertEnabled": false,
+                "clientCertMode": "Required",
+                "hostNamesDisabled": false,
+                "containerSize": 0,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": true,
+                "redundancyMode": "None",
+                "publicNetworkAccess": "Enabled",
+                "storageAccountRequired": false,
+                "keyVaultReferenceIdentity": "SystemAssigned"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2022-09-01",
+            "name": "[variables('function_app_name')]",
+            "location": "[parameters('region_name')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]"
+            ],
+            "tags": {},
+            "kind": "functionapp,linux",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "enabled": true,
+                "hostNameSslStates": [
+                    {
+                        "name": "[concat(variables('function_app_name'), '.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Standard"
+                    },
+                    {
+                        "name": "[concat(variables('function_app_name'), '.scm.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Repository"
+                    }
+                ],
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('server_farm_name'))]",
+                "reserved": true,
+                "isXenon": false,
+                "hyperV": false,
+                "vnetRouteAllEnabled": false,
+                "vnetImagePullEnabled": false,
+                "vnetContentShareEnabled": false,
+                "siteConfig": {
+                    "numberOfWorkers": 1,
+                    "linuxFxVersion": "DOTNET-ISOLATED|7.0",
+                    "acrUseManagedIdentityCreds": false,
+                    "alwaysOn": true,
+                    "http20Enabled": false,
+                    "functionAppScaleLimit": 0,
+                    "minimumElasticInstanceCount": 0,
+                    "appSettings": [
+                        {
+                            "name": "MicrosoftGraph__TenantId",
+                            "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'MicrosoftGraph-TenantId')).secretUri)]"
+                        },
+                        {
+                            "name": "MicrosoftGraph__ClientId",
+                            "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'MicrosoftGraph-ClientId')).secretUri)]"
+                        },
+                        {
+                            "name": "MicrosoftGraph__ClientSecret",
+                            "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'MicrosoftGraph-ClientSecret')).secretUri)]"
+                        },
+                        {
+                            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                            "value": "[reference(resourceId('microsoft.insights/components', variables('application_insights_name'))).properties.InstrumentationKey]"
+                        },
+                        {
+                            "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                            "value": "[reference(resourceId('microsoft.insights/components', variables('application_insights_name'))).properties.ConnectionString]"
+                        },
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storage_account_name')), '2019-06-01').keys[0].connectionString]"
+                        },
+                        {
+                            "name": "PnP__KeyVaultUri",
+                            "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('key_vault_name'))).properties.vaultUri]"
+                        },
+                        {
+                            "name": "PnP__TenantId",
+                            "value": "[tenant().tenantId]"
+                        },
+                        {
+                            "name": "PnP__ClientId",
+                            "value": "[parameters('tfl_rulebook_ms_graph_client_id')]"
+                        },
+                        {
+                            "name": "Webhooks__NotificationUrl",
+                            "value": "[reference(resourceId('Microsoft.Web/sites', variables('function_app_name'))).defaultHostName]"
+                        },
+                        {
+                            "name": "Webhooks__Items__0__SitePath",
+                            "value": ""
+                        },
+                        {
+                            "name": "Webhooks__Items__1__SitePath",
+                            "value": ""
+                        },
+                        {
+                            "name": "Webhooks__Items__2__SitePath",
+                            "value": ""
+                        },
+                        {
+                            "name": "Webhooks__Items__3__SitePath",
+                            "value": ""
+                        },
+                        {
+                            "name": "Webhooks__Items__4__SitePath",
+                            "value": ""
+                        },
+                        {
+                            "name": "Webhooks__SitePath",
+                            "value": ""
+                        },
+                        {
+                            "name": "DataSources__Taxonomy__RulebookTermSetId",
+                            "value": ""
+                        },
+                        {
+                            "name": "PnP__CertificateName",
+                            "value": ""
+                        },
+                        {
+                            "name": "DataSources__JargonBuster__Fields",
+                            "value": "Title,Meaning,SheTooltipReplacementText,SheTooltipImageUrl,SheTooltipHeight,SheTooltipWidth,SheTooltipLinkUrl,SheTooltipLinkText,SheTooltipPickUrlDescr,IgnoreCase,SheTerm"
+                        },
+                        {
+                            "name": "DataSources__JargonBuster__ImageUrlField",
+                            "value": "SheTooltipImageUrl"
+                        },
+                        {
+                            "name": "DataSources__JargonBuster__ListTitle",
+                            "value": "Jargon buster"
+                        },
+                        {
+                            "name": "DataSources__JargonBuster__Query__Expand",
+                            "value": "fields($select=Title,Meaning,SheTooltipReplacementText,SheTooltipImageUrl,SheTooltipHeight,SheTooltipWidth,SheTooltipLinkUrl,SheTooltipLinkText,SheTooltipPickUrlDescr,IgnoreCase,SheTerm)"
+                        },
+                        {
+                            "name": "DataSources__JargonBuster__Query__Filter",
+                            "value": "fields/SheTerm eq 1 and fields/Modified ge '{modified_date}'"
+                        },
+                        {
+                            "name": "DataSources__JargonBuster__Query__Top",
+                            "value": "200"
+                        },
+                        {
+                            "name": "DataSources__RoleGroups__Fields",
+                            "value": "Title,TFL_Rolebook_RG_Order,TFL_Rolebook_RG_Color,TFL_Rolebook_RG_ShowTitle"
+                        },
+                        {
+                            "name": "DataSources__RoleGroups__ListTitle",
+                            "value": "Role Groups"
+                        },
+                        {
+                            "name": "DataSources__RoleGroups__Query__Expand",
+                            "value": "fields($select=Title,TFL_Rolebook_RG_Order,TFL_Rolebook_RG_Color,TFL_Rolebook_RG_ShowTitle)"
+                        },
+                        {
+                            "name": "DataSources__RoleGroups__Query__Filter",
+                            "value": "fields/Modified ge '{modified_date}'"
+                        },
+                        {
+                            "name": "DataSources__RoleGroups__Query__Top",
+                            "value": "50"
+                        },
+                        {
+                            "name": "DataSources__Roles__Fields",
+                            "value": "Title,TFL_Rolebook_R_Group,TFL_Rolebook_R_GroupLookupId,TFL_Rolebook_R_Order,TFL_Rolebook_R_Abbreviation"
+                        },
+                        {
+                            "name": "DataSources__Roles__ListTitle",
+                            "value": "Roles"
+                        },
+                        {
+                            "name": "DataSources__Roles__Query__Expand",
+                            "value": "fields($select=Title,TFL_Rolebook_R_Group,TFL_Rolebook_R_GroupLookupId,TFL_Rolebook_R_Order,TFL_Rolebook_R_Abbreviation)"
+                        },
+                        {
+                            "name": "DataSources__Roles__Query__Filter",
+                            "value": "fields/Modified ge '{modified_date}'"
+                        },
+                        {
+                            "name": "DataSources__Roles__Query__Top",
+                            "value": "50"
+                        },
+                        {
+                            "name": "DataSources__SitePages__FieldsMapping__BannerImage",
+                            "value": "BannerImageUrl"
+                        },
+                        {
+                            "name": "DataSources__SitePages__FieldsMapping__Content",
+                            "value": "CanvasContent1"
+                        },
+                        {
+                            "name": "DataSources__SitePages__FieldsMapping__ContentType",
+                            "value": "ContentType"
+                        },
+                        {
+                            "name": "DataSources__SitePages__FieldsMapping__Title",
+                            "value": "Title"
+                        },
+                        {
+                            "name": "DataSources__SitePages__FieldsMapping__Topic",
+                            "value": "TFL_Rulebook_Topic"
+                        },
+                        {
+                            "name": "DataSources__SitePages__FieldsMapping__Version",
+                            "value": "_UIVersionString"
+                        },
+                        {
+                            "name": "DataSources__SitePages__IgnorePaths__0",
+                            "value": "/SitePages/Templates/"
+                        },
+                        {
+                            "name": "DataSources__SitePages__IgnorePaths__1",
+                            "value": "/SitePages/test"
+                        },
+                        {
+                            "name": "DataSources__SitePages__ImagesConfig__ImagesRegex",
+                            "value": "&gt;&lt;img.+?src=\\\\&quot;(http.+?)\\\\&quot;"
+                        },
+                        {
+                            "name": "DataSources__SitePages__ListTitle",
+                            "value": "Site Pages"
+                        },
+                        {
+                            "name": "DataSources__SitePages__Query__Expand",
+                            "value": "fields($select=contentType,Modified,Title,Description,TFL_Rulebook_Topic,_AuthorByline,CanvasContent1,BannerImageUrl,_UIVersionString)"
+                        },
+                        {
+                            "name": "DataSources__SitePages__Query__Filter",
+                            "value": "(fields/ContentType/Name eq 'Rulebook Page' or fields/ContentType/Name eq 'Traffic Circular Page' or fields/ContentType/Name eq 'Landing Page') and fields/Modified ge '{modified_date}'"
+                        },
+                        {
+                            "name": "DataSources__SitePages__Query__Top",
+                            "value": "50"
+                        },
+                        {
+                            "name": "DataSources__Taxonomy__Fields",
+                            "value": "Term,Path,IdForTerm"
+                        },
+                        {
+                            "name": "DataSources__Taxonomy__ListTitle",
+                            "value": "TaxonomyHiddenList"
+                        },
+                        {
+                            "name": "DataSources__Taxonomy__Query__Expand",
+                            "value": "fields($select=Modified,Term,Path,IdForTerm)"
+                        },
+                        {
+                            "name": "DataSources__Taxonomy__Query__Filter",
+                            "value": "fields/Modified ge '{modified_date}' and fields/IdForTermSet eq 'f30133a5-bac6-43a1-8a4b-be996d374d10'"
+                        },
+                        {
+                            "name": "DataSources__Taxonomy__Query__Top",
+                            "value": "50"
+                        },
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~4"
+                        },
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "dotnet-isolated"
+                        },
+                        {
+                            "name": "HttpClient__TimeoutSeconds",
+                            "value": "15"
+                        },
+                        {
+                            "name": "Notification__ChunkSize",
+                            "value": "10"
+                        },
+                        {
+                            "name": "Notification__SyncDoneBody",
+                            "value": "New content is available"
+                        },
+                        {
+                            "name": "Notification__SyncDoneTitle",
+                            "value": "LU Rulebook"
+                        },
+                        {
+                            "name": "Notification__ThresholdRps",
+                            "value": "100"
+                        },
+                        {
+                            "name": "ServiceBus__EventsQueueName",
+                            "value": "sbq-content-sync"
+                        },
+                        {
+                            "name": "ServiceBus__NotificationsQueueName",
+                            "value": "sbq-notifications"
+                        },
+                        {
+                            "name": "ServiceBus__SubscriptionQueueName",
+                            "value": "sbq-subscriptions"
+                        },
+                        {
+                            "name": "Webhooks__ExpirationMinutes",
+                            "value": "40000"
+                        },
+                        {
+                            "name": "Webhooks__Items__0__List",
+                            "value": "Site Pages"
+                        },
+                        {
+                            "name": "Webhooks__Items__1__List",
+                            "value": "TaxonomyHiddenList"
+                        },
+                        {
+                            "name": "Webhooks__Items__2__List",
+                            "value": "Role Groups"
+                        },
+                        {
+                            "name": "Webhooks__Items__3__List",
+                            "value": "Roles"
+                        },
+                        {
+                            "name": "Webhooks__Items__4__List",
+                            "value": "Jargon buster"
+                        },
+                        {
+                            "name": "Webhooks__RenewShiftMinutes",
+                            "value": "30"
+                        },
+                        {
+                            "name": "WEBSITE_ENABLE_SYNC_UPDATE_SITE",
+                            "value": "true"
+                        },
+                        {
+                            "name": "WEBSITE_RUN_FROM_PACKAGE",
+                            "value": "1"
+                        },
+                        {
+                            "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+                            "value": "true"
+                        }
+                    ],
+                    "connectionStrings": [
+                        {
+                            "name": "DB",
+                            "type": "SQLAzure",
+                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-DB')).secretUri)]"
+                        },
+                        {
+                            "name": "ServiceBus",
+                            "type": "ServiceBus",
+                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-ServiceBus')).secretUri)]"
+                        }
+                    ]
+                },
+                "scmSiteAlsoStopped": false,
+                "clientAffinityEnabled": false,
+                "clientCertEnabled": false,
+                "clientCertMode": "Required",
+                "hostNamesDisabled": false,
+                "containerSize": 1536,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": true,
+                "redundancyMode": "None",
+                "publicNetworkAccess": "Enabled",
+                "storageAccountRequired": false,
+                "keyVaultReferenceIdentity": "SystemAssigned"
+            }
+        },
     ]
 }
