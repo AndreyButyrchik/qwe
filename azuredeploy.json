@@ -526,7 +526,7 @@
                         },
                         {
                             "name": "AzureWebJobsStorage",
-                            "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storage_account_name')), '2019-06-01').keys[0].connectionString]"
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storage_account_name'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storage_account_name')), '2019-04-01').keys[0].value,';EndpointSuffix=core.windows.net')]"
                         },
                         {
                             "name": "PnP__KeyVaultUri",
