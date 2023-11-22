@@ -518,11 +518,11 @@
                         },
                         {
                             "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                            "value": "[reference(resourceId('microsoft.insights/components', variables('application_insights_name'))).properties.InstrumentationKey]"
+                            "value": "[reference(resourceId('microsoft.insights/components', variables('application_insights_name'))).InstrumentationKey]"
                         },
                         {
                             "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
-                            "value": "[reference(resourceId('microsoft.insights/components', variables('application_insights_name'))).properties.ConnectionString]"
+                            "value": "[reference(resourceId('microsoft.insights/components', variables('application_insights_name'))).ConnectionString]"
                         },
                         {
                             "name": "AzureWebJobsStorage",
