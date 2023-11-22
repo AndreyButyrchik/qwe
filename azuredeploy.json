@@ -35,7 +35,7 @@
             "type": "String"
         },
         "tfl_rulebook_storage_account_name": {
-            "defaultValue": "satflrulebook",
+            "defaultValue": "sarulebook",
             "type": "String"
         },
         "tfl_rulebook_sql_server_admin_login": {
@@ -443,7 +443,7 @@
                         {
                             "name": "DB",
                             "type": "SQLAzure",
-                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-DB')).secretUri)]"
+                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-DB')).secretUri, ')')]"
                         }
                     ]
                 },
@@ -530,7 +530,7 @@
                         },
                         {
                             "name": "PnP__KeyVaultUri",
-                            "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('key_vault_name'))).properties.vaultUri]"
+                            "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('key_vault_name'))).vaultUri]"
                         },
                         {
                             "name": "PnP__TenantId",
@@ -797,12 +797,12 @@
                         {
                             "name": "DB",
                             "type": "SQLAzure",
-                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-DB')).secretUri)]"
+                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-DB')).secretUri, ')')]"
                         },
                         {
                             "name": "ServiceBus",
                             "type": "ServiceBus",
-                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-ServiceBus')).secretUri)]"
+                            "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-ServiceBus')).secretUri, ')')]"
                         }
                     ]
                 },
