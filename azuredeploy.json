@@ -14,6 +14,10 @@
             "defaultValue": "sql-tfl-rulebook",
             "type": "String"
         },
+        "sql_db_name": {
+            "defaultValue": "sqldb-tfl-rulebook",
+            "type": "String"
+        },
         "app_service_name": {
             "defaultValue": "app-tfl-rulebook-api",
             "type": "String"
@@ -105,7 +109,7 @@
         "key_vault_name": "[concat(parameters('key_vault_name'), '', uniqueString(resourceGroup().id))]",
         "serivce_bus_namespace_name": "[concat(parameters('serivce_bus_namespace_name'), '-', uniqueString(resourceGroup().id))]",
         "sql_server_name": "[concat(parameters('sql_server_name'), '-', uniqueString(resourceGroup().id))]",
-        "sql_database_name": "[concat(parameters('sql_server_name'), '-', uniqueString(resourceGroup().id), '/sqldb-tfl-rulebook')]",
+        "sql_database_name": "[concat(parameters('sql_server_name'), '-', uniqueString(resourceGroup().id), '/', parameters('sql_db_name'))]",
         "server_farm_name": "[concat(parameters('server_farm_name'), '_', uniqueString(resourceGroup().id))]",
         "app_service_name": "[concat(parameters('app_service_name'), '-', uniqueString(resourceGroup().id))]",
         "function_app_name": "[concat(parameters('function_app_name'), '-', uniqueString(resourceGroup().id))]",
@@ -389,8 +393,8 @@
             "properties": {
                 "attributes": {
                     "enabled": true
-                },
-                "value": "[concat('Server=tcp:',reference(variables('sql_server_name')).fullyQualifiedDomainName,',1433;Initial Catalog=',variables('sql_database_name'),';Persist Security Info=False;User ID=',reference(variables('sql_server_name')).administratorLogin,';Password=',parameters('sql_server_admin_password'),';MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]"
+                },                                                                                                   
+                "value": "[concat('Server=tcp:',reference(variables('sql_server_name')).fullyQualifiedDomainName,',1433;Initial Catalog=',parameters('sql_db_name'),';Persist Security Info=False;User ID=',reference(variables('sql_server_name')).administratorLogin,'@',variables('sql_server_name'),';Password=',parameters('sql_server_admin_password'),';MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]"
             }
         },
         {
@@ -857,7 +861,7 @@
                         },
                         {
                             "name": "ServiceBus",
-                            "type": "ServiceBus",
+                            "type": "Custom",
                             "connectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('key_vault_name'), 'ConnectionStrings-ServiceBus')).secretUriWithVersion, ')')]"
                         }
                     ]
@@ -880,7 +884,7 @@
     "outputs": {
         "web-api-url": {
             "type": "string",
-            "value": "[concat('https://', variables('function_app_name'), '.azurewebsites.net')]"
+            "value": "[concat('https://', variables('app_service_name'), '.azurewebsites.net')]"
         },
         "app-insights-mobile-instrumentation-key": {
             "type": "string",
