@@ -208,6 +208,14 @@
             }
         },
         {
+            "type": "Microsoft.Sql/servers/firewallRules",
+            "apiVersion": "2023-02-01-preview",
+            "name": "[concat(variables('sql_server_name'), '/AllowAllWindowsAzureIps')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('sql_server_name'))]"
+            ]
+        },
+        {
             "type": "Microsoft.Sql/servers/databases",
             "apiVersion": "2023-02-01-preview",
             "name": "[variables('sql_database_name')]",
