@@ -1447,7 +1447,7 @@
     "outputs": {
         "web-api-url": {
             "type": "string",
-            "value": "[concat('https://', parameters('apim_tfl_rulebook_name'), '.azure-api.net', variables('app_service_name'))]"
+            "value": "[concat('https://', parameters('apim_tfl_rulebook_name'), '.azure-api.net/', variables('app_service_name'))]"
         },
         "app-insights-mobile-instrumentation-key": {
             "type": "string",
