@@ -101,19 +101,31 @@
         "certificate_name": {
             "defaultValue": "",
             "type": "String"
+        },
+        "apim_tfl_rulebook_name": {
+            "defaultValue": "apim-tfl-rulebook",
+            "type": "String"
+        },
+        "apim-publisher-email": {
+            "defaultValue": "",
+            "type": "string"
+        },
+        "apim-publisher-name": {
+            "defaultValue": "TFL",
+            "type": "string"
         }
     },
     "variables": {
-        "application_insights_name": "[concat(parameters('application_insights_name'), '_', uniqueString(resourceGroup().id))]",
-        "application_insights_mobile_name": "[concat(parameters('application_insights_mobile_name'), '_', uniqueString(resourceGroup().id))]",
-        "key_vault_name": "[concat(parameters('key_vault_name'), '', uniqueString(resourceGroup().id))]",
-        "serivce_bus_namespace_name": "[concat(parameters('serivce_bus_namespace_name'), '-', uniqueString(resourceGroup().id))]",
-        "sql_server_name": "[concat(parameters('sql_server_name'), '-', uniqueString(resourceGroup().id))]",
-        "sql_database_name": "[concat(parameters('sql_server_name'), '-', uniqueString(resourceGroup().id), '/', parameters('sql_db_name'))]",
-        "server_farm_name": "[concat(parameters('server_farm_name'), '_', uniqueString(resourceGroup().id))]",
-        "app_service_name": "[concat(parameters('app_service_name'), '-', uniqueString(resourceGroup().id))]",
-        "function_app_name": "[concat(parameters('function_app_name'), '-', uniqueString(resourceGroup().id))]",
-        "storage_account_name": "[concat(parameters('storage_account_name'), uniqueString(resourceGroup().id))]"
+        "application_insights_name": "[parameters('application_insights_name')]",
+        "application_insights_mobile_name": "[parameters('application_insights_mobile_name')]",
+        "key_vault_name": "[parameters('key_vault_name')]",
+        "serivce_bus_namespace_name": "[parameters('serivce_bus_namespace_name')]",
+        "sql_server_name": "[parameters('sql_server_name')]",
+        "sql_database_name": "[concat(parameters('sql_server_name'), '/', parameters('sql_db_name'))]",
+        "server_farm_name": "[parameters('server_farm_name')]",
+        "app_service_name": "[parameters('app_service_name')]",
+        "function_app_name": "[parameters('function_app_name')]",
+        "storage_account_name": "[parameters('storage_account_name')]"
     },
     "resources": [
         {
@@ -206,14 +218,6 @@
                 "publicNetworkAccess": "Enabled",
                 "restrictOutboundNetworkAccess": "Disabled"
             }
-        },
-        {
-            "type": "Microsoft.Sql/servers/firewallRules",
-            "apiVersion": "2023-02-01-preview",
-            "name": "[concat(variables('sql_server_name'), '/AllowAllWindowsAzureIps')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Sql/servers', variables('sql_server_name'))]"
-            ]
         },
         {
             "type": "Microsoft.Sql/servers/databases",
@@ -610,7 +614,7 @@
                         },
                         {
                             "name": "Webhooks__NotificationUrl",
-                            "value": "[concat('https://', variables('function_app_name'), '.azurewebsites.net/api/Webhook')]"
+                            "value": "[concat('https://', parameters('apim_tfl_rulebook_name'), '.azurewebsites.net/', variables('function_app_name'),' /Webhook')]"
                         },
                         {
                             "name": "Webhooks__Items__0__SitePath",
@@ -887,12 +891,572 @@
                 "storageAccountRequired": false,
                 "keyVaultReferenceIdentity": "SystemAssigned"
             }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[parameters('apim_tfl_rulebook_name')]",
+            "location": "[parameters('region_name')]",
+            "sku": {
+                "name": "Basic",
+                "capacity": 1
+            },
+            "properties": {
+                "publisherEmail": "[parameters('apim-publisher-email')]",
+                "publisherName": "[parameters('apim-publisher-name')]",
+                "hostnameConfigurations": [
+                    {
+                        "type": "Proxy",
+                        "hostName": "[concat(parameters('apim_tfl_rulebook_name'), '.azure-api.net')]",
+                        "negotiateClientCertificate": false,
+                        "defaultSslBinding": true,
+                        "certificateSource": "BuiltIn"
+                    }
+                ],
+                "customProperties": {
+                    "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Protocols.Tls11": "false",
+                    "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Protocols.Tls10": "false",
+                    "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Backend.Protocols.Tls11": "false",
+                    "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Backend.Protocols.Tls10": "false",
+                    "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Backend.Protocols.Ssl30": "false",
+                    "Microsoft.WindowsAzure.ApiManagement.Gateway.Protocols.Server.Http2": "false",
+                    "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Ciphers.TripleDes168": "false",
+                    "Microsoft.WindowsAzure.ApiManagement.Gateway.Security.Protocols.Ssl30": "false"
+                },
+                "virtualNetworkType": "None",
+                "disableGateway": false,
+                "natGatewayState": "Unsupported",
+                "apiVersionConstraint": {},
+                "publicNetworkAccess": "Enabled",
+                "legacyPortalStatus": "Enabled",
+                "developerPortalStatus": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('app_service_name'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "[variables('app_service_name')]",
+                "apiRevision": "1",
+                "subscriptionRequired": false,
+                "protocols": [
+                    "https"
+                ],
+                "authenticationSettings": {
+                    "oAuth2AuthenticationSettings": [],
+                    "openidAuthenticationSettings": []
+                },
+                "subscriptionKeyParameterNames": {},
+                "isCurrent": true,
+                "path": "[variables('app_service_name')]"
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('function_app_name'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "[variables('function_app_name')]",
+                "apiRevision": "1",
+                "description": "Function App",
+                "subscriptionRequired": false,
+                "path": "[variables('function_app_name')]",
+                "protocols": [
+                    "https"
+                ],
+                "authenticationSettings": {
+                    "oAuth2AuthenticationSettings": [],
+                    "openidAuthenticationSettings": []
+                },
+                "subscriptionKeyParameterNames": {},
+                "isCurrent": true
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/backends",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('function_app_name'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "description": "[variables('function_app_name')]",
+                "url": "[concat('https://', variables('function_app_name'), '.azurewebsites.net/api')]",
+                "protocol": "http",
+                "resourceId": "[resourceId('Microsoft.Web/sites', variables('function_app_name'))]",
+                "credentials": {
+                    "header": {
+                        "x-functions-key": [
+                            "[concat('{{', variables('function_app_name'), '-key}}')]"
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/backends",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/WebApp_', variables('app_service_name'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "description": "[variables('app_service_name')]",
+                "url": "[concat('https://', variables('app_service_name'), '.azurewebsites.net')]",
+                "protocol": "http",
+                "resourceId": "[resourceId('Microsoft.Web/sites', variables('app_service_name'))]"
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('app_service_name'), '/index')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('app_service_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "index",
+                "method": "GET",
+                "urlTemplate": "/",
+                "templateParameters": [],
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('app_service_name'), '/api-acknowledgement-acknowledgepage')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('app_service_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "/api/Acknowledgement/acknowledgePage",
+                "method": "POST",
+                "urlTemplate": "/api/Acknowledgement/acknowledgePage",
+                "templateParameters": [],
+                "request": {
+                    "description": "{\n  \"id\": \"string\",\n  \"modified\": \"2023-11-24T08:55:19.674Z\",\n  \"created\": \"2023-11-24T08:55:19.674Z\",\n  \"email\": \"string\",\n  \"pageId\": \"string\",\n  \"markedAt\": \"2023-11-24T08:55:19.674Z\",\n  \"version\": 0\n}",
+                    "queryParameters": [],
+                    "headers": [],
+                    "representations": []
+                },
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('app_service_name'), '/api-acknowledgement-ispageacknowledged')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('app_service_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "/api/Acknowledgement/isPageAcknowledged",
+                "method": "GET",
+                "urlTemplate": "/api/Acknowledgement/isPageAcknowledged",
+                "templateParameters": [],
+                "request": {
+                    "queryParameters": [
+                        {
+                            "name": "email",
+                            "type": "string",
+                            "required": true,
+                            "values": []
+                        },
+                        {
+                            "name": "pageId",
+                            "type": "string",
+                            "required": true,
+                            "values": []
+                        },
+                        {
+                            "name": "pageVersion",
+                            "type": "float",
+                            "required": true,
+                            "values": []
+                        }
+                    ],
+                    "headers": [],
+                    "representations": []
+                },
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('app_service_name'), '/api-content-changes')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('app_service_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "/api/Content/changes",
+                "method": "GET",
+                "urlTemplate": "/api/Content/changes",
+                "templateParameters": [],
+                "request": {
+                    "queryParameters": [
+                        {
+                            "name": "lastModified",
+                            "type": "DateTime",
+                            "required": true,
+                            "values": []
+                        }
+                    ],
+                    "headers": [],
+                    "representations": []
+                },
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('app_service_name'), '/api-content-images')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('app_service_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "/api/Content/images",
+                "method": "GET",
+                "urlTemplate": "/api/Content/images",
+                "templateParameters": [],
+                "request": {
+                    "queryParameters": [
+                        {
+                            "name": "lastModified",
+                            "type": "DateTime",
+                            "required": true,
+                            "values": []
+                        },
+                        {
+                            "name": "take",
+                            "type": "int",
+                            "required": true,
+                            "values": []
+                        }
+                    ],
+                    "headers": [],
+                    "representations": []
+                },
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('app_service_name'), '/api-content-jargonbuster')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('app_service_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "/api/Content/jargonbuster",
+                "method": "GET",
+                "urlTemplate": "/api/Content/jargonbuster",
+                "templateParameters": [],
+                "request": {
+                    "queryParameters": [
+                        {
+                            "name": "lastModified",
+                            "type": "DateTime",
+                            "required": true,
+                            "values": []
+                        },
+                        {
+                            "name": "take",
+                            "type": "int",
+                            "required": true,
+                            "values": []
+                        }
+                    ],
+                    "headers": [],
+                    "representations": []
+                },
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('app_service_name'), '/api-content-rolegroups')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('app_service_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "/api/Content/roleGroups",
+                "method": "GET",
+                "urlTemplate": "/api/Content/roleGroups",
+                "templateParameters": [],
+                "request": {
+                    "queryParameters": [
+                        {
+                            "name": "lastModified",
+                            "type": "DateTime",
+                            "required": true,
+                            "values": []
+                        },
+                        {
+                            "name": "take",
+                            "type": "int",
+                            "required": true,
+                            "values": []
+                        }
+                    ],
+                    "headers": [],
+                    "representations": []
+                },
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('app_service_name'), '/api-content-roles')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('app_service_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "/api/Content/roles",
+                "method": "GET",
+                "urlTemplate": "/api/Content/roles",
+                "templateParameters": [],
+                "request": {
+                    "queryParameters": [
+                        {
+                            "name": "lastModified",
+                            "type": "DateTime",
+                            "required": true,
+                            "values": []
+                        }
+                    ],
+                    "headers": [],
+                    "representations": []
+                },
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('app_service_name'), '/api-content-sitepages')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('app_service_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "/api/Content/sitePages",
+                "method": "GET",
+                "urlTemplate": "/api/Content/sitePages",
+                "templateParameters": [],
+                "request": {
+                    "queryParameters": [
+                        {
+                            "name": "lastModified",
+                            "type": "DateTime",
+                            "required": true,
+                            "values": []
+                        },
+                        {
+                            "name": "take",
+                            "type": "int",
+                            "required": true,
+                            "values": []
+                        }
+                    ],
+                    "headers": [],
+                    "representations": []
+                },
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('app_service_name'), '/api-content-taxonomy')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('app_service_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "/api/Content/taxonomy",
+                "method": "GET",
+                "urlTemplate": "/api/Content/taxonomy",
+                "templateParameters": [],
+                "request": {
+                    "queryParameters": [
+                        {
+                            "name": "lastModified",
+                            "type": "DateTime",
+                            "required": true,
+                            "values": []
+                        },
+                        {
+                            "name": "take",
+                            "type": "int",
+                            "required": true,
+                            "values": []
+                        }
+                    ],
+                    "headers": [],
+                    "representations": []
+                },
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('app_service_name'), '/api-pushnotficationtoken')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('app_service_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "/api/pushNotficationToken",
+                "method": "POST",
+                "urlTemplate": "/api/pushNotficationToken",
+                "templateParameters": [],
+                "request": {
+                    "description": "{\n  \"id\": \"string\",\n  \"modified\": \"2023-11-24T08:53:35.826Z\",\n  \"created\": \"2023-11-24T08:53:35.826Z\",\n  \"email\": \"string\",\n  \"deviceInfo\": \"string\"\n}",
+                    "queryParameters": [],
+                    "headers": [],
+                    "representations": []
+                },
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('function_app_name'), '/get-listsubscriptions')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('function_app_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "ListSubscriptions",
+                "method": "GET",
+                "urlTemplate": "/ListSubscriptions",
+                "templateParameters": [],
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('function_app_name'), '/get-webhook')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('function_app_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "Webhook",
+                "method": "GET",
+                "urlTemplate": "/Webhook",
+                "templateParameters": [],
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('function_app_name'), '/post-createsubscriptions')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('function_app_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "CreateSubscriptions",
+                "method": "POST",
+                "urlTemplate": "/CreateSubscriptions",
+                "templateParameters": [],
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('function_app_name'), '/post-deletesubscriptions')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('function_app_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "DeleteSubscriptions",
+                "method": "POST",
+                "urlTemplate": "/DeleteSubscriptions",
+                "templateParameters": [],
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('function_app_name'), '/post-oncontentchangehttp')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('function_app_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "OnContentChangeHttp",
+                "method": "POST",
+                "urlTemplate": "/OnContentChangeHttp",
+                "templateParameters": [],
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('function_app_name'), '/post-synccontenthttp')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('function_app_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "SyncContentHttp",
+                "method": "POST",
+                "urlTemplate": "/SyncContentHttp",
+                "templateParameters": [],
+                "responses": []
+            }
+        },
+        {
+            "type": "Microsoft.ApiManagement/service/apis/operations",
+            "apiVersion": "2023-03-01-preview",
+            "name": "[concat(parameters('apim_tfl_rulebook_name'), '/', variables('function_app_name'), '/post-webhook')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ApiManagement/service/apis', parameters('apim_tfl_rulebook_name'), variables('function_app_name'))]",
+                "[resourceId('Microsoft.ApiManagement/service', parameters('apim_tfl_rulebook_name'))]"
+            ],
+            "properties": {
+                "displayName": "Webhook",
+                "method": "POST",
+                "urlTemplate": "/Webhook",
+                "templateParameters": [],
+                "responses": []
+            }
         }
     ],
     "outputs": {
         "web-api-url": {
             "type": "string",
-            "value": "[concat('https://', variables('app_service_name'), '.azurewebsites.net')]"
+            "value": "[concat('https://', parameters('apim_tfl_rulebook_name'), '.azure-api.net')]"
         },
         "app-insights-mobile-instrumentation-key": {
             "type": "string",
