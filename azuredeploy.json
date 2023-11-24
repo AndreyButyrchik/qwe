@@ -950,7 +950,6 @@
                     "oAuth2AuthenticationSettings": [],
                     "openidAuthenticationSettings": []
                 },
-                "subscriptionKeyParameterNames": {},
                 "isCurrent": true,
                 "path": "[variables('app_service_name')]"
             }
@@ -975,7 +974,6 @@
                     "oAuth2AuthenticationSettings": [],
                     "openidAuthenticationSettings": []
                 },
-                "subscriptionKeyParameterNames": {},
                 "isCurrent": true
             }
         },
@@ -990,7 +988,6 @@
                 "description": "[variables('function_app_name')]",
                 "url": "[concat('https://', variables('function_app_name'), '.azurewebsites.net/api')]",
                 "protocol": "http",
-                "resourceId": "[resourceId('Microsoft.Web/sites', variables('function_app_name'))]",
                 "credentials": {
                     "header": {
                         "x-functions-key": [
@@ -1010,8 +1007,7 @@
             "properties": {
                 "description": "[variables('app_service_name')]",
                 "url": "[concat('https://', variables('app_service_name'), '.azurewebsites.net')]",
-                "protocol": "http",
-                "resourceId": "[resourceId('Microsoft.Web/sites', variables('app_service_name'))]"
+                "protocol": "http"
             }
         },
         {
