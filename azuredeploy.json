@@ -988,13 +988,7 @@
                 "description": "[variables('function_app_name')]",
                 "url": "[concat('https://', variables('function_app_name'), '.azurewebsites.net/api')]",
                 "protocol": "http",
-                "credentials": {
-                    "header": {
-                        "x-functions-key": [
-                            "[concat('{{', variables('function_app_name'), '-key}}')]"
-                        ]
-                    }
-                }
+                "resourceId": "[concat('https://management.azure.com/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Web/sites/', variables('function_app_name'))]"
             }
         },
         {
@@ -1007,7 +1001,8 @@
             "properties": {
                 "description": "[variables('app_service_name')]",
                 "url": "[concat('https://', variables('app_service_name'), '.azurewebsites.net')]",
-                "protocol": "http"
+                "protocol": "http",
+                "resourceId": "[concat('https://management.azure.com/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Web/sites/', variables('app_service_name'))]",
             }
         },
         {
@@ -1452,7 +1447,7 @@
     "outputs": {
         "web-api-url": {
             "type": "string",
-            "value": "[concat('https://', parameters('apim_tfl_rulebook_name'), '.azure-api.net')]"
+            "value": "[concat('https://', parameters('apim_tfl_rulebook_name'), '.azure-api.net', variables('app_service_name'))]"
         },
         "app-insights-mobile-instrumentation-key": {
             "type": "string",
